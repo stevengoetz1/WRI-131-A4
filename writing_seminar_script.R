@@ -59,6 +59,7 @@ please_work <- please_work %>%
 
 # Winsorizing
 please_work$at <- Winsorize(please_work$at)
+please_work$standardized_unexpected_earnings <- Winsorize(please_work$standardized_unexpected_earnings)
 
 # When disaggcomp == 1
 summary( subset(please_work, disaggcomp == 1)$at)
@@ -75,31 +76,61 @@ summary(df1$standardized_unexpected_earnings)
 tapply(df1$standardized_unexpected_earnings, df1$disaggcomp, summary)
 boxplot(standardized_unexpected_earnings ~ disaggcomp, data=df1)
 
-# Boxplot and violin plot
-boxplot(standardized_unexpected_earnings ~ disaggcomp, data=df1)
+## Boxplot and violin plot
 
-ggplot(df1, aes(x = disaggcomp, y = standardized_unexpected_earnings)) +
-  geom_violin(trim = FALSE, fill = "lightblue") +
-  geom_boxplot(width = 0.1) +
-  theme_minimal() +
-  ggtitle("Distribution of SUE by disaggcomp")
+# Abbreviated ff12_industry codes to full names
+industry_full_names <- c(
+  "BusEq" = "Business Equipment",
+  "Chems" = "Chemicals",
+  "Durbl" = "Consumer Durables",
+  "Enrgy" = "Energy",
+  "Hlth"  = "Healthcare",
+  "Manuf" = "Manufacturing",
+  "Money" = "Finance",
+  "NoDur" = "Consumer Non-Durables",
+  "Other" = "Other",
+  "Shops" = "Retail (Shops)",
+  "Telcm" = "Telecommunications",
+  "Utils" = "Utilities"
+)
 
-ggplot(please_work, aes(x = disaggcomp, y = standardized_unexpected_earnings)) +
+# Plot w/ revised labels
+ggplot(please_work, aes(x = as.factor(disaggcomp), y = standardized_unexpected_earnings)) +
   geom_boxplot() +
-  facet_wrap(~ ff12_industry, scales = "free_y") +
+  facet_wrap(~ ff12_industry, scales = "free_y", labeller = labeller(ff12_industry = industry_full_names)) +
   theme_minimal() +
-  ggtitle("SUE by disaggcomp across Industries")
+  labs(
+    x = "Disaggregated Compensation",
+    y = "Standardized Unexpected Earnings",
+    title = "Standardized Unexpected Earnings by Disaggregated Compensation Across Industries"
+  ) +
+  theme(
+    strip.text = element_text(size = 8, face = "bold"),  # facet label formatting
+    axis.title.x = element_text(size = 10),
+    axis.title.y = element_text(size = 10),
+    plot.title = element_text(size = 8, face = "bold", hjust = 0.5)
+  )
 
-boxplot(standardized_unexpected_earnings ~ disaggcomp, data=df1)
-
+# Doing the same for the violin plot
 ggplot(please_work, 
-       aes(x = disaggcomp, 
+       aes(x = as.factor(disaggcomp), 
            y = standardized_unexpected_earnings)) +
   geom_violin(trim = FALSE, fill = "lightblue") +
-  geom_boxplot(width = 0.1) +
-  facet_wrap(~ ff12_industry, scales = "free_y") +
+  geom_boxplot(width = 0.1, outlier.shape = NA) +  # suppress outliers from boxplot to not double-count
+  facet_wrap(~ ff12_industry, scales = "free_y", labeller = labeller(ff12_industry = industry_full_names)) +
   theme_minimal() +
-  ggtitle("Distribution of SUE by disaggcomp across Industries")
+  labs(
+    x = "Disaggregated Compensation",
+    y = "Standardized Unexpected Earnings",
+    title = "Distribution of Standardized Unexpected Earnings by Disaggregated Compensation Across Industries"
+  ) +
+ 
+  theme(
+    strip.text = element_text(size = 8, face = "bold"),
+    axis.title.x = element_text(size = 10),
+    axis.title.y = element_text(size = 10),
+    plot.title = element_text(size = 8, face = "bold", hjust = 0.5)
+  )
 
 ## Conducting OLS Estimations
 
@@ -114,4 +145,3 @@ model_industry_interaction <- lm(standardized_unexpected_earnings  ~ disaggcomp 
 summary(model_industry_interaction )
 
 # The rest of the code used the Stargazer package in the console to export all of the regression results 
-
